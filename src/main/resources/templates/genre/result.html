@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>장르 분석 결과</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 700px;
+            margin: 40px auto;
+            line-height: 1.6;
+        }
+
+        .card {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h2>분석 결과</h2>
+    <p><strong>대표 장르:</strong> <span th:text="${genreResult.mainGenre}"></span></p>
+    <p><strong>세부 장르:</strong> <span th:text="${genreResult.subGenre}"></span></p>
+    <p><strong>후보 장르:</strong> <span th:text="${#strings.listJoin(genreResult.candidateGenres, ', ')}"></span></p>
+    <p><strong>신뢰도:</strong> <span th:text="${genreResult.confidence + '%'}"></span></p>
+    <p><strong>설명:</strong> <span th:text="${genreResult.description}"></span></p>
+    <a href="/genre/upload">다시 업로드하기</a>
+</div>
+</body>
+</html>

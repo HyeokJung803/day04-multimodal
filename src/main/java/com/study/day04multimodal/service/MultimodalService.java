@@ -23,6 +23,11 @@ public class MultimodalService {
     private static final Set<String> ALLOWED_IMAGE_TYPES = Set.of(
             MimeTypeUtils.IMAGE_JPEG_VALUE, MimeTypeUtils.IMAGE_PNG_VALUE
     );
+
+    private static final Set<String> ALLOWED_AUDIO_TYPES = Set.of(
+        "audio/wav", "audio/mepg"
+    );
+
     private static final String ALLOWED_PDF_TYPES = "application/pdf";
 
     public MultimodalService(ChatClient.Builder builder) {
@@ -83,6 +88,19 @@ public class MultimodalService {
                 .content();
     }
 
+    public String describeAudio(MultipartFile file, String conversationId) {
+        validateAudio(file);
+        ByteArrayResource resource = toResource(file);
+        MimeType mimeType = MimeType.valueOf(file.getContentType());
+        String prompt = "오디오 파일을 듣고 내용을 설명해주세요.";
+        return chatClient.prompt()
+                .user(u -> u.text(prompt)
+                        .media(mimeType, resource)
+                )
+                .call()
+                .content();
+    }
+
 
 
     // 멀티파트 파일 -> 리소스로 변경하는 메서드
@@ -107,6 +125,17 @@ public class MultimodalService {
         }
     }
 
+    private void validateAudio(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "오디오 파일 업로드해주세요.");
+        }
+        String contentType = file.getContentType();  // 파일 가져오기
+
+        if (contentType == null || !ALLOWED_AUDIO_TYPES.contains(contentType)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "WAV나, MP3만 지원합니다. 받은 타입 :" + contentType);
+        }
+    }
     private void validatePdf(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "PDF 파일 업로드해주세요.");

@@ -23,7 +23,7 @@ public class AiController {
     }
 
     @PostMapping("/api/image-describe")
-    public String imagedescribe(@RequestParam MultipartFile file, @RequestParam String conversationId) {
+    public String imageDescribe(@RequestParam MultipartFile file, @RequestParam String conversationId) {
         return multimodalService.describeImage(file, conversationId);
     }
 
@@ -35,5 +35,10 @@ public class AiController {
     @PostMapping("/api/pdf-describe")
     public String pdfDescribe(@RequestParam MultipartFile file, @RequestParam String conversationId) {
         return multimodalService.describePdf(file, conversationId);
+    }
+
+    @PostMapping("/api/audio-describe")
+    public String audioDescribe(@RequestParam MultipartFile file, @RequestParam String conversationId) {
+        return multimodalService.describeAudio(file, conversationId);
     }
 }

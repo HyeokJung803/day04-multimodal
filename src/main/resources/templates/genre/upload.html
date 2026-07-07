@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>음악 장르 분석기</title>
+    <style>
+        :root {
+            --ink: #12131a;
+            --muted: #6b7280;
+            --line: #e5e7eb;
+            --panel: #ffffff;
+            --panel-soft: #f7f7fa;
+            --violet: #6d28d9;
+            --teal: #0f766e;
+            --amber: #d97706;
+            --rose: #be123c;
+            --shadow: 0 24px 70px rgba(18, 19, 26, 0.18);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+            color: var(--ink);
+            background:
+                    linear-gradient(120deg, rgba(15, 118, 110, 0.16), transparent 36%),
+                    linear-gradient(240deg, rgba(190, 18, 60, 0.14), transparent 34%),
+                    #eceff4;
+            display: grid;
+            place-items: center;
+            padding: 32px 18px;
+        }
+
+        .shell {
+            width: min(1080px, 100%);
+            display: grid;
+            grid-template-columns: minmax(0, 0.96fr) minmax(360px, 1.04fr);
+            background: rgba(255, 255, 255, 0.82);
+            border: 1px solid rgba(255, 255, 255, 0.72);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            backdrop-filter: blur(18px);
+        }
+
+        .stage {
+            position: relative;
+            min-height: 680px;
+            padding: 42px;
+            background:
+                    linear-gradient(150deg, rgba(18, 19, 26, 0.92), rgba(28, 35, 56, 0.94)),
+                    #12131a;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+
+        .stage::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+            background-size: 28px 28px;
+            mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.86), transparent);
+            pointer-events: none;
+        }
+
+        .brand,
+        .hero-copy,
+        .visualizer,
+        .mini-stats {
+            position: relative;
+            z-index: 1;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 800;
+            letter-spacing: 0;
+        }
+
+        .brand-mark {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--teal), var(--violet) 58%, var(--amber));
+            display: grid;
+            place-items: center;
+            box-shadow: 0 12px 26px rgba(0, 0, 0, 0.3);
+        }
+
+        .brand-mark span {
+            width: 15px;
+            height: 15px;
+            border: 3px solid white;
+            border-radius: 50%;
+            display: block;
+        }
+
+        .hero-copy {
+            max-width: 460px;
+        }
+
+        h1 {
+            font-size: clamp(36px, 5vw, 62px);
+            line-height: 1.02;
+            letter-spacing: 0;
+            margin-bottom: 18px;
+        }
+
+        .hero-copy p {
+            color: rgba(255, 255, 255, 0.74);
+            font-size: 17px;
+            line-height: 1.7;
+            word-break: keep-all;
+        }
+
+        .visualizer {
+            height: 180px;
+            display: grid;
+            grid-template-columns: repeat(28, 1fr);
+            align-items: end;
+            gap: 7px;
+            padding: 26px 0 12px;
+        }
+
+        .bar {
+            min-height: 18px;
+            border-radius: 999px;
+            background: linear-gradient(to top, var(--teal), #22c55e 44%, #f59e0b);
+            opacity: 0.92;
+            animation: pulse 1.8s ease-in-out infinite;
+        }
+
+        .bar:nth-child(2n) {
+            animation-duration: 2.25s;
+            background: linear-gradient(to top, var(--violet), #38bdf8);
+        }
+
+        .bar:nth-child(3n) {
+            animation-duration: 1.55s;
+            background: linear-gradient(to top, var(--rose), var(--amber));
+        }
+
+        .bar:nth-child(1) { height: 44px; }
+        .bar:nth-child(2) { height: 78px; }
+        .bar:nth-child(3) { height: 112px; }
+        .bar:nth-child(4) { height: 66px; }
+        .bar:nth-child(5) { height: 138px; }
+        .bar:nth-child(6) { height: 96px; }
+        .bar:nth-child(7) { height: 52px; }
+        .bar:nth-child(8) { height: 124px; }
+        .bar:nth-child(9) { height: 156px; }
+        .bar:nth-child(10) { height: 72px; }
+        .bar:nth-child(11) { height: 108px; }
+        .bar:nth-child(12) { height: 46px; }
+        .bar:nth-child(13) { height: 142px; }
+        .bar:nth-child(14) { height: 86px; }
+        .bar:nth-child(15) { height: 60px; }
+        .bar:nth-child(16) { height: 132px; }
+        .bar:nth-child(17) { height: 104px; }
+        .bar:nth-child(18) { height: 152px; }
+        .bar:nth-child(19) { height: 76px; }
+        .bar:nth-child(20) { height: 118px; }
+        .bar:nth-child(21) { height: 50px; }
+        .bar:nth-child(22) { height: 96px; }
+        .bar:nth-child(23) { height: 146px; }
+        .bar:nth-child(24) { height: 84px; }
+        .bar:nth-child(25) { height: 126px; }
+        .bar:nth-child(26) { height: 58px; }
+        .bar:nth-child(27) { height: 104px; }
+        .bar:nth-child(28) { height: 70px; }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scaleY(0.82);
+                filter: saturate(0.86);
+            }
+            50% {
+                transform: scaleY(1);
+                filter: saturate(1.16);
+            }
+        }
+
+        .mini-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .stat {
+            padding: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .stat strong {
+            display: block;
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        .stat span {
+            color: rgba(255, 255, 255, 0.68);
+            font-size: 12px;
+        }
+
+        .workspace {
+            padding: 42px;
+            background: var(--panel);
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .panel-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 18px;
+            align-items: flex-start;
+        }
+
+        .eyebrow {
+            color: var(--teal);
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0;
+            margin-bottom: 8px;
+        }
+
+        h2 {
+            font-size: 28px;
+            line-height: 1.18;
+            letter-spacing: 0;
+        }
+
+        .format-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .format-badges span {
+            padding: 7px 10px;
+            border-radius: 999px;
+            background: var(--panel-soft);
+            border: 1px solid var(--line);
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        form {
+            display: grid;
+            gap: 14px;
+        }
+
+        .dropzone {
+            border: 1px dashed #a7adb8;
+            background:
+                    linear-gradient(135deg, rgba(109, 40, 217, 0.08), transparent 42%),
+                    linear-gradient(240deg, rgba(15, 118, 110, 0.1), transparent 45%),
+                    var(--panel-soft);
+            border-radius: 18px;
+            min-height: 210px;
+            padding: 22px;
+            cursor: pointer;
+            display: grid;
+            place-items: center;
+            text-align: center;
+            transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .dropzone:hover,
+        .dropzone.is-ready {
+            border-color: var(--violet);
+            transform: translateY(-2px);
+            box-shadow: 0 16px 34px rgba(109, 40, 217, 0.14);
+        }
+
+        .upload-glyph {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            border-radius: 18px;
+            background: var(--ink);
+            display: grid;
+            place-items: center;
+            position: relative;
+        }
+
+        .upload-glyph::before,
+        .upload-glyph::after {
+            content: "";
+            position: absolute;
+            background: white;
+            border-radius: 999px;
+        }
+
+        .upload-glyph::before {
+            width: 28px;
+            height: 4px;
+        }
+
+        .upload-glyph::after {
+            width: 4px;
+            height: 28px;
+        }
+
+        .drop-title {
+            font-size: 19px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .drop-copy {
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-name {
+            min-height: 20px;
+            color: var(--teal);
+            font-size: 13px;
+            font-weight: 700;
+            word-break: break-all;
+        }
+
+        .submit-button {
+            height: 54px;
+            border: 0;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--ink), #343a52);
+            color: white;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+        }
+
+        .submit-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 28px rgba(18, 19, 26, 0.22);
+        }
+
+        .submit-button:disabled {
+            opacity: 0.72;
+            cursor: wait;
+        }
+
+        .result {
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            background: var(--panel-soft);
+            overflow: hidden;
+        }
+
+        .result-top {
+            padding: 22px;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 18px;
+            align-items: start;
+            background: white;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .result-title {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 7px;
+        }
+
+        .result-genre {
+            font-size: 30px;
+            font-weight: 900;
+            line-height: 1.1;
+            overflow-wrap: anywhere;
+        }
+
+        .confidence {
+            min-width: 92px;
+            text-align: right;
+        }
+
+        .confidence strong {
+            display: block;
+            font-size: 28px;
+            line-height: 1;
+            color: var(--violet);
+        }
+
+        .confidence span {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .meter {
+            grid-column: 1 / -1;
+            height: 9px;
+            border-radius: 999px;
+            background: #e8eaf0;
+            overflow: hidden;
+        }
+
+        .meter-fill {
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, var(--teal), var(--violet), var(--amber));
+        }
+
+        .result-body {
+            padding: 22px;
+            display: grid;
+            gap: 18px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .info-box {
+            padding: 14px;
+            border-radius: 14px;
+            background: white;
+            border: 1px solid var(--line);
+            min-width: 0;
+        }
+
+        .label {
+            display: block;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 7px;
+        }
+
+        .value {
+            font-size: 15px;
+            font-weight: 700;
+            line-height: 1.45;
+            overflow-wrap: anywhere;
+        }
+
+        .genre-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .genre-chip {
+            padding: 8px 11px;
+            background: white;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            color: var(--ink);
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .genre-chip:first-child {
+            background: #111827;
+            border-color: #111827;
+            color: white;
+        }
+
+        .reason {
+            padding: 16px;
+            border-radius: 14px;
+            background: white;
+            border: 1px solid var(--line);
+            color: #2f3542;
+            line-height: 1.7;
+            word-break: keep-all;
+        }
+
+        @media (max-width: 900px) {
+            body {
+                display: block;
+            }
+
+            .shell {
+                grid-template-columns: 1fr;
+            }
+
+            .stage {
+                min-height: 430px;
+            }
+
+            .visualizer {
+                height: 130px;
+            }
+        }
+
+        @media (max-width: 560px) {
+            body {
+                padding: 14px;
+            }
+
+            .stage,
+            .workspace {
+                padding: 24px;
+            }
+
+            .panel-head,
+            .result-top {
+                grid-template-columns: 1fr;
+                display: grid;
+            }
+
+            .format-badges,
+            .confidence {
+                justify-content: flex-start;
+                text-align: left;
+            }
+
+            .mini-stats,
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .visualizer {
+                grid-template-columns: repeat(18, 1fr);
+            }
+
+            .visualizer .bar:nth-child(n + 19) {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+<main class="shell">
+    <section class="stage">
+        <div class="brand">
+            <div class="brand-mark"><span></span></div>
+            <span>Genre Signal</span>
+        </div>
+
+        <div class="hero-copy">
+            <h1>음악의 결을 읽는 장르 분석기</h1>
+            <p>트랩, 붐뱁, 재즈 힙합, 얼터너티브 록처럼 헷갈리는 경계까지 후보로 나눠 보여줍니다.</p>
+        </div>
+
+        <div class="visualizer" aria-hidden="true">
+            <i class="bar"></i><i class="bar"></i><i class="bar"></i><i class="bar"></i>
+            <i class="bar"></i><i class="bar"></i><i class="bar"></i><i class="bar"></i>
+            <i class="bar"></i><i class="bar"></i><i class="bar"></i><i class="bar"></i>
+            <i class="bar"></i><i class="bar"></i><i class="bar"></i><i class="bar"></i>
+            <i class="bar"></i><i class="bar"></i><i class="bar"></i><i class="bar"></i>
+            <i class="bar"></i><i class="bar"></i><i class="bar"></i><i class="bar"></i>
+            <i class="bar"></i><i class="bar"></i><i class="bar"></i><i class="bar"></i>
+        </div>
+
+        <div class="mini-stats">
+            <div class="stat">
+                <strong>3-5</strong>
+                <span>후보 장르</span>
+            </div>
+            <div class="stat">
+                <strong>100</strong>
+                <span>신뢰도 스케일</span>
+            </div>
+            <div class="stat">
+                <strong>MP3</strong>
+                <span>WAV 지원</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="workspace">
+        <div class="panel-head">
+            <div>
+                <div class="eyebrow">Audio Upload</div>
+                <h2>분석할 파일을 올려주세요</h2>
+            </div>
+            <div class="format-badges" aria-label="지원 파일 형식">
+                <span>MP3</span>
+                <span>WAV</span>
+            </div>
+        </div>
+
+        <form id="upload-form" th:action="@{/genre/analyze}" method="post" enctype="multipart/form-data">
+            <label for="audio-file" class="dropzone" id="dropzone">
+                <span>
+                    <span class="upload-glyph"></span>
+                    <span class="drop-title">오디오 파일 선택</span>
+                    <span class="drop-copy">파일을 선택하면 바로 장르 분석을 시작할 수 있습니다.</span>
+                </span>
+            </label>
+            <input type="file" id="audio-file" name="file" accept="audio/*" required>
+            <div class="file-name" id="file-name"></div>
+            <button class="submit-button" id="submit-button" type="submit">장르 분석하기</button>
+        </form>
+
+        <div class="result" th:if="${genreResult != null}">
+            <div class="result-top">
+                <div>
+                    <div class="result-title">대표 장르</div>
+                    <div class="result-genre" th:text="${genreResult.mainGenre}"></div>
+                </div>
+                <div class="confidence">
+                    <strong th:text="${genreResult.confidence}"></strong>
+                    <span>confidence</span>
+                </div>
+                <div class="meter" aria-hidden="true">
+                    <div class="meter-fill" th:style="'width: ' + ${genreResult.confidence} + '%'"></div>
+                </div>
+            </div>
+
+            <div class="result-body">
+                <div class="info-grid">
+                    <div class="info-box">
+                        <span class="label">분석 파일</span>
+                        <div class="value" id="analyzed-file"></div>
+                    </div>
+                    <div class="info-box">
+                        <span class="label">세부 장르</span>
+                        <div class="value" th:text="${genreResult.subGenre}"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <span class="label">후보 장르</span>
+                    <div class="genre-list">
+                        <span class="genre-chip"
+                              th:each="genre : ${genreResult.candidateGenres}"
+                              th:text="${genre}"></span>
+                    </div>
+                </div>
+
+                <div>
+                    <span class="label">판단 근거</span>
+                    <div class="reason" th:text="${genreResult.description}"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<script>
+    const fileInput = document.getElementById('audio-file');
+    const fileNameEl = document.getElementById('file-name');
+    const dropzone = document.getElementById('dropzone');
+    const form = document.getElementById('upload-form');
+    const submitButton = document.getElementById('submit-button');
+
+    fileInput.addEventListener('change', function(e) {
+        const fileName = e.target.files[0] ? e.target.files[0].name : '';
+        fileNameEl.textContent = fileName ? fileName : '';
+        dropzone.classList.toggle('is-ready', Boolean(fileName));
+        sessionStorage.setItem('selectedFile', fileName);
+    });
+
+    form.addEventListener('submit', function() {
+        submitButton.disabled = true;
+        submitButton.textContent = '분석 중...';
+    });
+
+    window.addEventListener('load', function() {
+        const analyzedFileEl = document.getElementById('analyzed-file');
+        if (analyzedFileEl) {
+            const fileName = sessionStorage.getItem('selectedFile');
+            analyzedFileEl.textContent = fileName || '업로드한 오디오';
+        }
+    });
+</script>
+</body>
+</html>
