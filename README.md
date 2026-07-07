@@ -2,6 +2,12 @@
 
 Spring AI 멀티모달 기능을 사용해서 오디오 파일을 업로드하고, AI가 음악 장르를 분석하는 예제 프로젝트입니다.
 
+## 구현 예시 ##
+<img width="1919" height="925" alt="image" src="https://github.com/user-attachments/assets/9f76f729-9a37-481d-9dcb-cb71605c5bf9" />
+<img width="1907" height="922" alt="image" src="https://github.com/user-attachments/assets/ff5c3cff-065e-41de-8600-6376e715aa62" />
+
+
+
 ## 구현한 기능
 
 | 기능 | 설명 |
