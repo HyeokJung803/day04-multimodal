@@ -1,5 +1,6 @@
 package com.study.day04multimodal.service;
 
+import com.study.day04multimodal.dto.PdfSummary;
 import com.study.day04multimodal.dto.ReceiptInfo;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.core.io.ByteArrayResource;
@@ -22,6 +23,7 @@ public class MultimodalService {
     private static final Set<String> ALLOWED_IMAGE_TYPES = Set.of(
             MimeTypeUtils.IMAGE_JPEG_VALUE, MimeTypeUtils.IMAGE_PNG_VALUE
     );
+    private static final String ALLOWED_PDF_TYPES = "application/pdf";
 
     public MultimodalService(ChatClient.Builder builder) {
         this.chatClient = builder.build();
@@ -39,6 +41,49 @@ public class MultimodalService {
                 .call()
                 .entity(ReceiptInfo.class);
     }
+
+    public String describeImage(MultipartFile file, String conversationId) {
+        validateImage(file);
+        ByteArrayResource resource = toResource(file);
+        MimeType mimeType = MimeType.valueOf(file.getContentType());
+
+        String prompt = "입력받은 이미지가 무엇인지 친절하게 설명해주세요.";
+
+        return chatClient.prompt()
+                .user(u -> u.text(prompt)
+                        .media(mimeType, resource)
+                )
+                .call()
+                .content();
+    }
+
+    public PdfSummary analyzePdf(MultipartFile file, String conversationId) {
+        validatePdf(file); // 검증
+        ByteArrayResource resource = toResource(file);
+        MimeType mimeType = MimeType.valueOf(file.getContentType());
+        String prompt = "이 문서의 내용을 요약해주세요.";
+        return chatClient.prompt()
+                .user(u -> u.text(prompt)
+                        .media(mimeType, resource)
+                )
+                .call()
+                .entity(PdfSummary.class);
+    }
+
+    public String describePdf(MultipartFile file, String conversationId) {
+        validatePdf(file); // 검증
+        ByteArrayResource resource = toResource(file);
+        MimeType mimeType = MimeType.valueOf(file.getContentType());
+        String prompt = "이 문서의 내용을 요약해주세요.";
+        return chatClient.prompt()
+                .user(u -> u.text(prompt)
+                        .media(mimeType, resource)
+                )
+                .call()
+                .content();
+    }
+
+
 
     // 멀티파트 파일 -> 리소스로 변경하는 메서드
     private static ByteArrayResource toResource(MultipartFile file) {
@@ -59,6 +104,17 @@ public class MultimodalService {
         if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "JPEG나, PNG 이미지만 지원합니다. 받은 타입 :" + contentType);
+        }
+    }
+
+    private void validatePdf(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "PDF 파일 업로드해주세요.");
+        }
+        String contentType = file.getContentType();  // 파일 가져오기
+        if (!contentType.equals(ALLOWED_PDF_TYPES)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "PDF 파일만 지원합니다. 받은 타입 :" + contentType);
         }
     }
 
