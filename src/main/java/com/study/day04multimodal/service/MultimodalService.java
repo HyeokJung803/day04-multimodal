@@ -1,5 +1,6 @@
 package com.study.day04multimodal.service;
 
+import com.study.day04multimodal.dto.ReceiptInfo;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpStatus;
@@ -26,7 +27,7 @@ public class MultimodalService {
         this.chatClient = builder.build();
     }
 
-    public String analyzeImage(MultipartFile file, String conversationId) {
+    public ReceiptInfo analyzeImage(MultipartFile file, String conversationId) {
         validateImage(file);                            // 적합한 이미지인지 검증
         ByteArrayResource resource = toResource(file);  // 리소스 변환
         MimeType mimeType = MimeType.valueOf(file.getContentType()); // 컨텐츠 타입 추출
@@ -36,7 +37,7 @@ public class MultimodalService {
                         .media(mimeType, resource)
                 )
                 .call()
-                .content();
+                .entity(ReceiptInfo.class);
     }
 
     // 멀티파트 파일 -> 리소스로 변경하는 메서드

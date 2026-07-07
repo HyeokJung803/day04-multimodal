@@ -1,5 +1,6 @@
 package com.study.day04multimodal.controller;
 
+import com.study.day04multimodal.dto.ReceiptInfo;
 import com.study.day04multimodal.service.MultimodalService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -16,7 +17,7 @@ public class AiController {
     }
 
     @PostMapping("/api/image-analysis")
-    public String imageAnalysis(@RequestParam MultipartFile file, @RequestParam String conversationId) {
+    public ReceiptInfo imageAnalysis(@RequestParam MultipartFile file, @RequestParam String conversationId) {
         return multimodalService.analyzeImage(file, conversationId);
     }
 }
